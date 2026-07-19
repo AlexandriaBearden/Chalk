@@ -12,6 +12,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -41,6 +42,10 @@ class MainActivity : ComponentActivity() {
                     mutableStateOf(setOf<String>())
                 }
 
+                var savedGymNames by remember {
+                    mutableStateOf(setOf<String>())
+                }
+
                 Scaffold(
                     modifier = Modifier.fillMaxSize()
                 ) { innerPadding ->
@@ -58,6 +63,15 @@ class MainActivity : ComponentActivity() {
                         ChalkScreen.RESULTS -> {
                             GymResultsScreen(
                                 selectedOptions = selectedWorkoutOptions,
+                                savedGymNames = savedGymNames,
+                                onSaveGym = { gymName ->
+                                    savedGymNames =
+                                        if (gymName in savedGymNames) {
+                                            savedGymNames - gymName
+                                        } else {
+                                            savedGymNames + gymName
+                                        }
+                                },
                                 onBack = {
                                     currentScreen = ChalkScreen.HOME
                                 },
@@ -163,6 +177,8 @@ fun ChalkHomeScreen(
 @Composable
 fun GymResultsScreen(
     selectedOptions: Set<String>,
+    savedGymNames: Set<String>,
+    onSaveGym: (String) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -222,14 +238,24 @@ fun GymResultsScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             items(matchingGyms) { gym ->
-                GymResultCard(gym = gym)
+                GymResultCard(
+                    gym = gym,
+                    isSaved = gym.name in savedGymNames,
+                    onSaveClick = {
+                        onSaveGym(gym.name)
+                    }
+                )
             }
         }
     }
 }
 
 @Composable
-fun GymResultCard(gym: Gym) {
+fun GymResultCard(
+    gym: Gym,
+    isSaved: Boolean,
+    onSaveClick: () -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -255,6 +281,21 @@ fun GymResultCard(gym: Gym) {
                 text = gym.features.joinToString(" • "),
                 style = MaterialTheme.typography.bodySmall
             )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedButton(
+                onClick = onSaveClick,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = if (isSaved) {
+                        "Saved"
+                    } else {
+                        "Save Gym"
+                    }
+                )
+            }
         }
     }
 }
