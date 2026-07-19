@@ -50,6 +50,24 @@ class MainActivity : ComponentActivity() {
                     mutableStateOf<Gym?>(null)
                 }
 
+                val gyms = listOf(
+                    Gym(
+                        "Atlas Strength Club",
+                        "0.8 Miles Away",
+                        listOf("Strength", "Day Pass", "Recovery")
+                    ),
+                    Gym(
+                        "Form Studio",
+                        "1.4 Miles Away",
+                        listOf("Pilates", "Group Fitness")
+                    ),
+                    Gym(
+                        "The Training Room",
+                        "2.1 Miles Away",
+                        listOf("Strength", "Group Fitness", "Day Pass")
+                    )
+                )
+
                 Scaffold(
                     modifier = Modifier.fillMaxSize()
                 ) { innerPadding ->
@@ -60,6 +78,9 @@ class MainActivity : ComponentActivity() {
                                 onFindGyms = { selectedOptions ->
                                     selectedWorkoutOptions = selectedOptions
                                     currentScreen = ChalkScreen.RESULTS
+                                },
+                                onSavedGymsClick = {
+                                    currentScreen = ChalkScreen.SAVED
                                 }
                             )
                         }
@@ -107,6 +128,22 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
                         }
+
+                        ChalkScreen.SAVED -> {
+                            SavedGymsScreen(
+                                gyms = gyms.filter { gym ->
+                                    gym.name in savedGymNames
+                                                   },
+                                onGymClick = { gym ->
+                                    selectedGym = gym
+                                    currentScreen = ChalkScreen.DETAILS
+                                },
+                                onBack = {
+                                    currentScreen = ChalkScreen.HOME
+                                },
+                                modifier = Modifier.padding(innerPadding)
+                            )
+                        }
                     }
                 }
             }
@@ -117,7 +154,8 @@ class MainActivity : ComponentActivity() {
 enum class ChalkScreen {
     HOME,
     RESULTS,
-    DETAILS
+    DETAILS,
+    SAVED
 }
 
 data class Gym(
@@ -129,7 +167,8 @@ data class Gym(
 @Composable
 fun ChalkHomeScreen(
     modifier: Modifier = Modifier,
-    onFindGyms: (Set<String>) -> Unit
+    onFindGyms: (Set<String>) -> Unit,
+    onSavedGymsClick: () -> Unit
 ) {
     val workoutOptions = listOf(
         "Strength",
@@ -189,6 +228,15 @@ fun ChalkHomeScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
         }
+
+        OutlinedButton(
+            onClick = onSavedGymsClick,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Saved Gyms")
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
 
         Spacer(modifier = Modifier.weight(1f))
 
@@ -388,6 +436,80 @@ fun GymDetailsScreen(
                     "Saved"
                 } else { "Save Gym" }
             )
+        }
+    }
+}
+
+@Composable
+fun SavedGymsScreen(
+    gyms: List<Gym>,
+    onGymClick: (Gym) -> Unit,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .padding(24.dp)
+    ) {
+        TextButton(
+            onClick = onBack
+        ) {
+            Text("Back")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "Saved Gyms",
+            style = MaterialTheme.typography.displayLarge
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        if (gyms.isEmpty()) {
+            Text(
+                text = "You haven't saved any gyms yet.",
+                style = MaterialTheme.typography.bodyLarge
+            )
+        } else {
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                items(gyms) { gym ->
+                    Card(
+                        onClick = {
+                            onGymClick(gym)
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(20.dp)
+                        ) {
+                            Text(
+                                text = gym.name,
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+
+                            Spacer(modifier = Modifier.height(6.dp))
+
+                            Text(
+                                text = gym.location,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Text(
+                                text = gym.features.joinToString(" • "),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }
