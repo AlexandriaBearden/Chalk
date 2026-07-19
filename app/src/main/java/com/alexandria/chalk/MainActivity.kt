@@ -6,48 +6,94 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alexandria.chalk.ui.theme.ChalkTheme
 
-import androidx.compose.material3.Button
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
         setContent {
             ChalkTheme {
-                Scaffold( modifier = Modifier.fillMaxSize() ) { innerPadding ->
-                    ChalkHomeScreen(
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                var currentScreen by remember {
+                    mutableStateOf(ChalkScreen.HOME)
+                }
+
+                var selectedWorkoutOptions by remember {
+                    mutableStateOf(setOf<String>())
+                }
+
+                Scaffold(
+                    modifier = Modifier.fillMaxSize()
+                ) { innerPadding ->
+                    when (currentScreen) {
+                        ChalkScreen.HOME -> {
+                            ChalkHomeScreen(
+                                modifier = Modifier.padding(innerPadding),
+                                onFindGyms = { selectedOptions ->
+                                    selectedWorkoutOptions = selectedOptions
+                                    currentScreen = ChalkScreen.RESULTS
+                                }
+                            )
+                        }
+
+                        ChalkScreen.RESULTS -> {
+                            GymResultsScreen(
+                                selectedOptions = selectedWorkoutOptions,
+                                onBack = {
+                                    currentScreen = ChalkScreen.HOME
+                                },
+                                modifier = Modifier.padding(innerPadding)
+                            )
+                        }
+                    }
                 }
             }
         }
     }
 }
 
+enum class ChalkScreen {
+    HOME,
+    RESULTS
+}
+
+data class Gym(
+    val name: String,
+    val location: String,
+    val features: List<String>
+)
+
 @Composable
-fun ChalkHomeScreen(modifier: Modifier = Modifier) {
-   val workoutOptions = listOf(
-       "Strength",
-       "Pilates",
-       "Group Fitness",
-       "Recovery",
-       "Day Pass"
-   )
+fun ChalkHomeScreen(
+    modifier: Modifier = Modifier,
+    onFindGyms: (Set<String>) -> Unit
+) {
+    val workoutOptions = listOf(
+        "Strength",
+        "Pilates",
+        "Group Fitness",
+        "Recovery",
+        "Day Pass"
+    )
 
     var selectedOptions by remember {
         mutableStateOf(setOf<String>())
@@ -104,11 +150,111 @@ fun ChalkHomeScreen(modifier: Modifier = Modifier) {
 
         Button(
             onClick = {
+                onFindGyms(selectedOptions)
             },
             enabled = selectedOptions.isNotEmpty(),
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Find Gyms")
+        }
+    }
+}
+
+@Composable
+fun GymResultsScreen(
+    selectedOptions: Set<String>,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val gyms = listOf(
+        Gym(
+            name = "Atlas Strength Club",
+            location = "0.8 miles away",
+            features = listOf("Strength", "Day Pass", "Recovery")
+        ),
+        Gym(
+            name = "Form Studio",
+            location = "1.4 miles away",
+            features = listOf("Pilates", "Group Fitness")
+        ),
+        Gym(
+            name = "The Training Room",
+            location = "2.1 miles away",
+            features = listOf("Strength", "Group Fitness", "Day Pass")
+        )
+    )
+
+    val matchingGyms = gyms.filter { gym ->
+        gym.features.any { feature ->
+            feature in selectedOptions
+        }
+    }
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .padding(24.dp)
+    ) {
+        TextButton(
+            onClick = onBack
+        ) {
+            Text("Back")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "Gyms for you",
+            style = MaterialTheme.typography.displayLarge
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = "Based on: ${selectedOptions.joinToString()}",
+            style = MaterialTheme.typography.bodyMedium
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            items(matchingGyms) { gym ->
+                GymResultCard(gym = gym)
+            }
+        }
+    }
+}
+
+@Composable
+fun GymResultCard(gym: Gym) {
+    Card(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp)
+        ) {
+            Text(
+                text = gym.name,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Text(
+                text = gym.location,
+                style = MaterialTheme.typography.bodyMedium
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = gym.features.joinToString(" • "),
+                style = MaterialTheme.typography.bodySmall
+            )
         }
     }
 }
