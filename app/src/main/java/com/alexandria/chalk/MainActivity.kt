@@ -46,6 +46,10 @@ class MainActivity : ComponentActivity() {
                     mutableStateOf(setOf<String>())
                 }
 
+                var selectedGym by remember {
+                    mutableStateOf<Gym?>(null)
+                }
+
                 Scaffold(
                     modifier = Modifier.fillMaxSize()
                 ) { innerPadding ->
@@ -75,8 +79,33 @@ class MainActivity : ComponentActivity() {
                                 onBack = {
                                     currentScreen = ChalkScreen.HOME
                                 },
+                                onGymClick = { gym ->
+                                    selectedGym = gym
+                                    currentScreen = ChalkScreen.DETAILS
+                                },
                                 modifier = Modifier.padding(innerPadding)
                             )
+                        }
+
+                        ChalkScreen.DETAILS -> {
+                            selectedGym?.let { gym ->
+                                GymDetailsScreen(
+                                    gym = gym,
+                                    isSaved = gym.name in savedGymNames,
+                                    onSaveClick = {
+                                            savedGymNames =
+                                                if (gym.name in savedGymNames) {
+                                                    savedGymNames - gym.name
+                                                } else {
+                                                    savedGymNames + gym.name
+                                                }
+                                    },
+                                    onBack = {
+                                        currentScreen = ChalkScreen.RESULTS
+                                    },
+                                    modifier = Modifier.padding(innerPadding)
+                                )
+                            }
                         }
                     }
                 }
@@ -87,7 +116,8 @@ class MainActivity : ComponentActivity() {
 
 enum class ChalkScreen {
     HOME,
-    RESULTS
+    RESULTS,
+    DETAILS
 }
 
 data class Gym(
@@ -179,6 +209,7 @@ fun GymResultsScreen(
     selectedOptions: Set<String>,
     savedGymNames: Set<String>,
     onSaveGym: (String) -> Unit,
+    onGymClick: (Gym) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -243,6 +274,9 @@ fun GymResultsScreen(
                     isSaved = gym.name in savedGymNames,
                     onSaveClick = {
                         onSaveGym(gym.name)
+                    },
+                    onGymClick = {
+                        onGymClick(gym)
                     }
                 )
             }
@@ -254,9 +288,11 @@ fun GymResultsScreen(
 fun GymResultCard(
     gym: Gym,
     isSaved: Boolean,
-    onSaveClick: () -> Unit
+    onSaveClick: () -> Unit,
+    onGymClick: () -> Unit
 ) {
     Card(
+        onClick = onGymClick,
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
@@ -296,6 +332,62 @@ fun GymResultCard(
                     }
                 )
             }
+        }
+    }
+}
+
+@Composable
+fun GymDetailsScreen(
+    gym: Gym,
+    isSaved: Boolean,
+    onSaveClick: () -> Unit,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .padding(24.dp)
+    ) {
+        TextButton(
+            onClick = onBack
+        ) {
+            Text("Back")
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Text(
+            text = gym.name,
+            style = MaterialTheme.typography.displayLarge
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = gym.location,
+            style = MaterialTheme.typography.bodyLarge
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Text(
+            text = gym.features.joinToString("\n"),
+            style = MaterialTheme.typography.bodyLarge
+        )
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        OutlinedButton(
+            onClick = onSaveClick,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = if (isSaved) {
+                    "Saved"
+                } else { "Save Gym" }
+            )
         }
     }
 }
