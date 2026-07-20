@@ -26,6 +26,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alexandria.chalk.ui.theme.ChalkTheme
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -34,17 +38,34 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             ChalkTheme {
+
+                val context = LocalContext.current
+
+                val database = remember {
+                    ChalkDatabase.getDatabase(context)
+                }
+
+                val savedGymDao = remember {
+                    database.savedGymDao()
+                }
+
                 var currentScreen by remember {
                     mutableStateOf(ChalkScreen.HOME)
                 }
+
+                val coroutineScope = rememberCoroutineScope()
 
                 var selectedWorkoutOptions by remember {
                     mutableStateOf(setOf<String>())
                 }
 
-                var savedGymNames by remember {
-                    mutableStateOf(setOf<String>())
-                }
+                val savedGyms by savedGymDao
+                    .getAllSavedGyms()
+                    .collectAsState(initial = emptyList())
+
+                val savedGymNames = savedGyms
+                    .map { gym -> gym.name }
+                    .toSet()
 
                 var selectedGym by remember {
                     mutableStateOf<Gym?>(null)
@@ -90,12 +111,24 @@ class MainActivity : ComponentActivity() {
                                 selectedOptions = selectedWorkoutOptions,
                                 savedGymNames = savedGymNames,
                                 onSaveGym = { gymName ->
-                                    savedGymNames =
+                                    coroutineScope.launch {
                                         if (gymName in savedGymNames) {
-                                            savedGymNames - gymName
+                                            savedGyms
+                                                .firstOrNull { it.name == gymName }
+                                                ?.let { savedGymDao.deleteGym(it) }
                                         } else {
-                                            savedGymNames + gymName
+                                            gyms
+                                                .firstOrNull { it.name == gymName }
+                                                ?.let { gym ->
+                                                    savedGymDao.saveGym(
+                                                        SavedGymEntity(
+                                                            name = gym.name,
+                                                            location = gym.location
+                                                        )
+                                                    )
+                                                }
                                         }
+                                    }
                                 },
                                 onBack = {
                                     currentScreen = ChalkScreen.HOME
@@ -114,12 +147,20 @@ class MainActivity : ComponentActivity() {
                                     gym = gym,
                                     isSaved = gym.name in savedGymNames,
                                     onSaveClick = {
-                                            savedGymNames =
-                                                if (gym.name in savedGymNames) {
-                                                    savedGymNames - gym.name
-                                                } else {
-                                                    savedGymNames + gym.name
-                                                }
+                                        coroutineScope.launch {
+                                            if (gym.name in savedGymNames) {
+                                                savedGyms
+                                                    .firstOrNull { it.name == gym.name }
+                                                    ?.let { savedGymDao.deleteGym(it) }
+                                            } else {
+                                                savedGymDao.saveGym(
+                                                    SavedGymEntity(
+                                                        name = gym.name,
+                                                        location = gym.location
+                                                    )
+                                                )
+                                            }
+                                        }
                                     },
                                     onBack = {
                                         currentScreen = ChalkScreen.RESULTS
