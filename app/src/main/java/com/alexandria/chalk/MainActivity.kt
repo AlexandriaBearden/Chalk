@@ -30,6 +30,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.ui.Alignment
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -319,72 +327,145 @@ fun ChalkHomeScreen(
         mutableStateOf(setOf<String>())
     }
 
+    var destination by remember {
+        mutableStateOf("")
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .padding(24.dp)
+            .padding(horizontal = 24.dp, vertical = 20.dp)
     ) {
-        Text(
-            text = "CHALK",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold
-        )
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+        ) {
+            Text(
+                text = "CHALK",
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 2.sp
+            )
 
-        Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
-        Text(
-            text = "What are you looking for today?",
-            style = MaterialTheme.typography.displayLarge
-        )
+            Text(
+                text = "Find the right gym,\nwherever you travel.",
+                style = MaterialTheme.typography.displayMedium,
+                fontWeight = FontWeight.Bold
+            )
 
-        Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-        workoutOptions.chunked(2).forEach { rowOptions ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                rowOptions.forEach { option ->
-                    FilterChip(
-                        selected = option in selectedOptions,
-                        onClick = {
-                            selectedOptions =
-                                if (option in selectedOptions) {
-                                    selectedOptions - option
-                                } else {
-                                    selectedOptions + option
-                                }
-                        },
-                        label = {
-                            Text(option)
-                        }
-                    )
+            Text(
+                text = "Choose a destination and tell us what matters for your workout.",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.height(28.dp))
+
+            Text(
+                text = "Destination",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            OutlinedTextField(
+                value = destination,
+                onValueChange = { newDestination ->
+                    destination = newDestination
+                },
+                placeholder = {
+                    Text("Austin, TX")
+                },
+                singleLine = true,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(28.dp))
+
+            Text(
+                text = "Workout Preferences",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Text(
+                text = "Select everything you want included.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            workoutOptions.chunked(2).forEach { rowOptions ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    rowOptions.forEach { option ->
+                        FilterChip(
+                            selected = option in selectedOptions,
+                            onClick = {
+                                selectedOptions =
+                                    if (option in selectedOptions) {
+                                        selectedOptions - option
+                                    } else {
+                                        selectedOptions + option
+                                    }
+                            },
+                            label = {
+                                Text(option)
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                 }
+
+                Spacer(modifier = Modifier.height(8.dp))
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedButton(
+                onClick = onSavedGymsClick,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp)
+            ) {
+                Text(
+                    text = "View Saved Gyms",
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
         }
-
-        OutlinedButton(
-            onClick = onSavedGymsClick,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Saved Gyms")
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Spacer(modifier = Modifier.weight(1f))
 
         Button(
             onClick = {
                 onFindGyms(selectedOptions)
             },
-            enabled = selectedOptions.isNotEmpty(),
-            modifier = Modifier.fillMaxWidth()
+            enabled = destination.isNotBlank() &&
+                    selectedOptions.isNotEmpty(),
+            shape = RoundedCornerShape(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(54.dp)
         ) {
-            Text("Find Gyms")
+            Text(
+                text = "Find Gyms",
+                fontWeight = FontWeight.SemiBold
+            )
         }
     }
 }
@@ -514,122 +595,297 @@ fun GymResultCard(
 
     Card(
         onClick = onGymClick,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp
+        )
     ) {
         Column(
-            modifier = Modifier.padding(20.dp)
+            modifier = Modifier.padding(22.dp)
         ) {
             if (isBestMatch) {
-                Text(
-                    text = "BEST MATCH",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold
-                )
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = MaterialTheme.colorScheme.primaryContainer
+                ) {
+                    Text(
+                        text = "BEST MATCH",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        letterSpacing = 1.sp,
+                        modifier = Modifier.padding(
+                            horizontal = 12.dp,
+                            vertical = 7.dp
+                        )
+                    )
+                }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(18.dp))
             }
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                verticalAlignment = Alignment.Top
             ) {
-                Text(
-                    text = gym.name,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
+                Column(
                     modifier = Modifier.weight(1f)
-                )
+                ) {
+                    Text(
+                        text = gym.name,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
 
-                Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
 
-                Text(
-                    text = "★ ${gym.rating}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
+                    Text(
+                        text = gym.location,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(modifier = Modifier.height(3.dp))
+
+                    Text(
+                        text = "${gym.distanceMiles} miles away",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = MaterialTheme.colorScheme.surfaceVariant
+                ) {
+                    Text(
+                        text = "${gym.rating}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(
+                            horizontal = 12.dp,
+                            vertical = 8.dp
+                        )
+                    )
+                }
             }
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(
+                    alpha = 0.55f
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(
+                        horizontal = 16.dp,
+                        vertical = 14.dp
+                    ),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = if (gym.isOpen) {
+                                "Open now"
+                            } else {
+                                "Currently closed"
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (gym.isOpen) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            }
+                        )
+
+                        Spacer(modifier = Modifier.height(2.dp))
+
+                        Text(
+                            text = "Current availability",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    Column(
+                        horizontalAlignment = Alignment.End
+                    ) {
+                        Text(
+                            text = "$${gym.dayPassPrice}",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        Spacer(modifier = Modifier.height(2.dp))
+
+                        Text(
+                            text = "Day pass",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
 
             Text(
-                text = gym.location,
-                style = MaterialTheme.typography.bodyMedium
+                text = "Workout options",
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
-            Text(
-                text = "${gym.distanceMiles} miles away",
-                style = MaterialTheme.typography.bodySmall
-            )
+            gym.workoutTypes.chunked(3).forEach { workoutRow ->
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    workoutRow.forEach { workoutType ->
+                        FeaturePill(
+                            text = workoutType,
+                            isHighlighted = workoutType in matchedFeatures
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+            }
 
             Spacer(modifier = Modifier.height(12.dp))
 
             Row(
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Bottom
             ) {
-                Text(
-                    text = if (gym.isOpen) {
-                        "Open now"
-                    } else {
-                        "Closed"
-                    },
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
+                Column {
+                    Text(
+                        text = "$matchPercentage% match",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
 
-                Text(
-                    text = "$${gym.dayPassPrice} day pass",
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text(
+                        text = "$matchCount of ${selectedOptions.size} preferences matched",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
-
-            Text(
-                text = gym.workoutTypes.joinToString(" • "),
-                style = MaterialTheme.typography.bodySmall
-            )
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            Text(
-                text = "$matchPercentage% match",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = "$matchCount of ${selectedOptions.size} preferences matched",
-                style = MaterialTheme.typography.bodySmall
-            )
-
             if (matchedFeatures.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
                 Text(
-                    text = "Matches: ${matchedFeatures.joinToString()}",
-                    style = MaterialTheme.typography.bodySmall
+                    text = "Matched preferences",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                matchedFeatures.chunked(3).forEach { featureRow ->
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        featureRow.forEach { feature ->
+                            FeaturePill(
+                                text = feature,
+                                isHighlighted = true
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
             }
 
             Spacer(modifier = Modifier.height(18.dp))
 
             OutlinedButton(
                 onClick = onSaveClick,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                shape = RoundedCornerShape(16.dp),
+                border = BorderStroke(
+                    width = 1.dp,
+                    color = if (isSaved) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.outline
+                    }
+                )
             ) {
                 Text(
                     text = if (isSaved) {
                         "Saved"
                     } else {
                         "Save Gym"
-                    }
+                    },
+                    fontWeight = FontWeight.SemiBold
                 )
             }
         }
+    }
+}
+
+@Composable
+fun FeaturePill(
+    text: String,
+    isHighlighted: Boolean = false
+) {
+    Surface(
+        shape = RoundedCornerShape(50),
+        color = if (isHighlighted) {
+            MaterialTheme.colorScheme.primaryContainer
+        } else {
+            MaterialTheme.colorScheme.surface
+        },
+        border = BorderStroke(
+            width = 1.dp,
+            color = if (isHighlighted) {
+                MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
+            } else {
+                MaterialTheme.colorScheme.outlineVariant
+            }
+        )
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = if (isHighlighted) {
+                FontWeight.SemiBold
+            } else {
+                FontWeight.Normal
+            },
+            color = if (isHighlighted) {
+                MaterialTheme.colorScheme.onPrimaryContainer
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            },
+            modifier = Modifier.padding(
+                horizontal = 12.dp,
+                vertical = 7.dp
+            )
+        )
     }
 }
 
