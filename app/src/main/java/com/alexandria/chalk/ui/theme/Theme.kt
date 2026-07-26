@@ -4,22 +4,27 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 
-
 private val ChalkColorTheme = lightColorScheme(
-    primary = Charcoal,
-    onPrimary = White,
+    primary = PowderBlue,
+    onPrimary = Charcoal,
 
-    secondary = PowderBlue,
-    onSecondary = Charcoal,
+    primaryContainer = PowderBlueLight,
+    onPrimaryContainer = Charcoal,
+
+    secondary = Charcoal,
+    onSecondary = White,
 
     background = Background,
     onBackground = Charcoal,
 
-    surface = Background,
+    surface = White,
     onSurface = Charcoal,
 
-    surfaceVariant = White,
-    onSurfaceVariant = Slate
+    surfaceVariant = PowderBlueLight,
+    onSurfaceVariant = Slate,
+
+    outline = PowderBlue,
+    outlineVariant = PowderBlueLight
 )
 
 @Composable
@@ -27,8 +32,8 @@ fun ChalkTheme(
     content: @Composable () -> Unit
 ) {
     MaterialTheme(
-      colorScheme = ChalkColorTheme,
-      typography = ChalkTypography,
-      content = content
+        colorScheme = ChalkColorTheme,
+        typography = ChalkTypography,
+        content = content
     )
 }

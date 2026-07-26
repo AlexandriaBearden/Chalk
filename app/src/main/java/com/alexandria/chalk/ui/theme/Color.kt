@@ -2,10 +2,12 @@ package com.alexandria.chalk.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Background = Color(0xFFF3F4F6)
-val PowderBlue = Color(0xFFB8C8D2)
+val Background = Color(0xFFF8F8F6)
 
-val Charcoal = Color(0xFF2F3437)
-val Slate = Color(0xFF69737A)
+val White = Color(0xFFFFFFFF)
 
-val White = Color(0xFFFFFFFFF)
+val PowderBlue = Color(0xFFAFC8D8)
+val PowderBlueLight = Color(0xFFE8F1F6)
+
+val Charcoal = Color(0xFF232323)
+val Slate = Color(0xFF747474)
