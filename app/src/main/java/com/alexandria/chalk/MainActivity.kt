@@ -73,19 +73,103 @@ class MainActivity : ComponentActivity() {
 
                 val gyms = listOf(
                     Gym(
-                        "Atlas Strength Club",
-                        "0.8 Miles Away",
-                        listOf("Strength", "Day Pass", "Recovery")
+                        name = "Iron House Fitness",
+                        location = "Downtown Austin",
+                        rating = 4.8,
+                        distanceMiles = 0.7,
+                        dayPassPrice = 20,
+                        isOpen = true,
+                        workoutTypes = listOf(
+                            "Strength",
+                            "Cardio",
+                            "CrossFit"
+                        ),
+                        amenities = listOf(
+                            "Day Pass",
+                            "Showers",
+                            "Lockers",
+                            "Parking"
+                        )
                     ),
+
                     Gym(
-                        "Form Studio",
-                        "1.4 Miles Away",
-                        listOf("Pilates", "Group Fitness")
+                        name = "Form Pilates Studio",
+                        location = "South Congress",
+                        rating = 4.9,
+                        distanceMiles = 1.3,
+                        dayPassPrice = 28,
+                        isOpen = true,
+                        workoutTypes = listOf(
+                            "Pilates",
+                            "Yoga",
+                            "Mobility"
+                        ),
+                        amenities = listOf(
+                            "Day Pass",
+                            "Showers",
+                            "Towels",
+                            "Lockers"
+                        )
                     ),
+
                     Gym(
-                        "The Training Room",
-                        "2.1 Miles Away",
-                        listOf("Strength", "Group Fitness", "Day Pass")
+                        name = "District Training Club",
+                        location = "East Austin",
+                        rating = 4.6,
+                        distanceMiles = 2.1,
+                        dayPassPrice = 18,
+                        isOpen = false,
+                        workoutTypes = listOf(
+                            "Strength",
+                            "HIIT",
+                            "Group Classes"
+                        ),
+                        amenities = listOf(
+                            "Day Pass",
+                            "Showers",
+                            "Parking",
+                            "Sauna"
+                        )
+                    ),
+
+                    Gym(
+                        name = "Sol Wellness",
+                        location = "West Austin",
+                        rating = 4.7,
+                        distanceMiles = 3.4,
+                        dayPassPrice = 30,
+                        isOpen = true,
+                        workoutTypes = listOf(
+                            "Yoga",
+                            "Pilates",
+                            "Cardio"
+                        ),
+                        amenities = listOf(
+                            "Day Pass",
+                            "Towels",
+                            "Showers",
+                            "Sauna",
+                            "Pool"
+                        )
+                    ),
+
+                    Gym(
+                        name = "Forge Strength Lab",
+                        location = "North Austin",
+                        rating = 4.5,
+                        distanceMiles = 4.2,
+                        dayPassPrice = 15,
+                        isOpen = true,
+                        workoutTypes = listOf(
+                            "Strength",
+                            "Powerlifting",
+                            "CrossFit"
+                        ),
+                        amenities = listOf(
+                            "Day Pass",
+                            "Lockers",
+                            "Parking"
+                        )
                     )
                 )
 
@@ -108,6 +192,7 @@ class MainActivity : ComponentActivity() {
 
                         ChalkScreen.RESULTS -> {
                             GymResultsScreen(
+                                gyms = gyms,
                                 selectedOptions = selectedWorkoutOptions,
                                 savedGymNames = savedGymNames,
                                 onSaveGym = { gymName ->
@@ -202,7 +287,15 @@ enum class ChalkScreen {
 data class Gym(
     val name: String,
     val location: String,
-    val features: List<String>
+
+    val rating: Double,
+    val distanceMiles: Double,
+
+    val dayPassPrice: Int,
+    val isOpen: Boolean,
+
+    val workoutTypes: List<String>,
+    val amenities: List<String>
 )
 
 @Composable
@@ -214,9 +307,12 @@ fun ChalkHomeScreen(
     val workoutOptions = listOf(
         "Strength",
         "Pilates",
-        "Group Fitness",
-        "Recovery",
-        "Day Pass"
+        "Yoga",
+        "Cardio",
+        "CrossFit",
+        "Group Classes",
+        "Day Pass",
+        "Showers"
     )
 
     var selectedOptions by remember {
@@ -295,6 +391,7 @@ fun ChalkHomeScreen(
 
 @Composable
 fun GymResultsScreen(
+    gyms: List<Gym>,
     selectedOptions: Set<String>,
     savedGymNames: Set<String>,
     onSaveGym: (String) -> Unit,
@@ -302,29 +399,30 @@ fun GymResultsScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val gyms = listOf(
-        Gym(
-            name = "Atlas Strength Club",
-            location = "0.8 miles away",
-            features = listOf("Strength", "Day Pass", "Recovery")
-        ),
-        Gym(
-            name = "Form Studio",
-            location = "1.4 miles away",
-            features = listOf("Pilates", "Group Fitness")
-        ),
-        Gym(
-            name = "The Training Room",
-            location = "2.1 miles away",
-            features = listOf("Strength", "Group Fitness", "Day Pass")
-        )
-    )
+    val rankedGyms = gyms
+        .map { gym ->
+            val allFeatures = gym.workoutTypes + gym.amenities
 
-    val matchingGyms = gyms.filter { gym ->
-        gym.features.any { feature ->
-            feature in selectedOptions
+            val matchCount = selectedOptions.count { selectedOption ->
+                selectedOption in allFeatures
+            }
+
+            gym to matchCount
         }
-    }
+        .filter { (_, matchCount) ->
+            matchCount > 0
+        }
+        .sortedWith(
+            compareByDescending<Pair<Gym, Int>> { (_, matchCount) ->
+                matchCount
+            }.thenByDescending { (gym, _) ->
+                gym.rating
+            }
+        )
+
+    val highestMatchCount = rankedGyms
+        .maxOfOrNull { (_, matchCount) -> matchCount }
+        ?: 0
 
     Column(
         modifier = modifier
@@ -354,20 +452,39 @@ fun GymResultsScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            items(matchingGyms) { gym ->
-                GymResultCard(
-                    gym = gym,
-                    isSaved = gym.name in savedGymNames,
-                    onSaveClick = {
-                        onSaveGym(gym.name)
-                    },
-                    onGymClick = {
-                        onGymClick(gym)
-                    }
-                )
+        if (rankedGyms.isEmpty()) {
+            Text(
+                text = "No gyms match your selected preferences.",
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Bold
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "Try going back and selecting different workout options.",
+                style = MaterialTheme.typography.bodyMedium
+            )
+        } else {
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(bottom = 24.dp)
+            ) {
+                items(rankedGyms) { (gym, matchCount) ->
+                    GymResultCard(
+                        gym = gym,
+                        selectedOptions = selectedOptions,
+                        matchCount = matchCount,
+                        isBestMatch = matchCount == highestMatchCount,
+                        isSaved = gym.name in savedGymNames,
+                        onSaveClick = {
+                            onSaveGym(gym.name)
+                        },
+                        onGymClick = {
+                            onGymClick(gym)
+                        }
+                    )
+                }
             }
         }
     }
@@ -376,10 +493,25 @@ fun GymResultsScreen(
 @Composable
 fun GymResultCard(
     gym: Gym,
+    selectedOptions: Set<String>,
+    matchCount: Int,
+    isBestMatch: Boolean,
     isSaved: Boolean,
     onSaveClick: () -> Unit,
     onGymClick: () -> Unit
 ) {
+    val allFeatures = gym.workoutTypes + gym.amenities
+
+    val matchedFeatures = selectedOptions.filter { selectedOption ->
+        selectedOption in allFeatures
+    }
+
+    val matchPercentage = if (selectedOptions.isNotEmpty()) {
+        (matchCount * 100) / selectedOptions.size
+    } else {
+        0
+    }
+
     Card(
         onClick = onGymClick,
         modifier = Modifier.fillMaxWidth()
@@ -387,11 +519,35 @@ fun GymResultCard(
         Column(
             modifier = Modifier.padding(20.dp)
         ) {
-            Text(
-                text = gym.name,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
+            if (isBestMatch) {
+                Text(
+                    text = "BEST MATCH",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = gym.name,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
+                )
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Text(
+                    text = "★ ${gym.rating}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
 
             Spacer(modifier = Modifier.height(6.dp))
 
@@ -400,14 +556,66 @@ fun GymResultCard(
                 style = MaterialTheme.typography.bodyMedium
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                text = gym.features.joinToString(" • "),
+                text = "${gym.distanceMiles} miles away",
                 style = MaterialTheme.typography.bodySmall
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = if (gym.isOpen) {
+                        "Open now"
+                    } else {
+                        "Closed"
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+
+                Text(
+                    text = "$${gym.dayPassPrice} day pass",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            Text(
+                text = gym.workoutTypes.joinToString(" • "),
+                style = MaterialTheme.typography.bodySmall
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            Text(
+                text = "$matchPercentage% match",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = "$matchCount of ${selectedOptions.size} preferences matched",
+                style = MaterialTheme.typography.bodySmall
+            )
+
+            if (matchedFeatures.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "Matches: ${matchedFeatures.joinToString()}",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
 
             OutlinedButton(
                 onClick = onSaveClick,
@@ -459,10 +667,71 @@ fun GymDetailsScreen(
             style = MaterialTheme.typography.bodyLarge
         )
 
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = "★ ${gym.rating} • ${gym.distanceMiles} miles away",
+            style = MaterialTheme.typography.bodyMedium
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = if (gym.isOpen) {
+                "Open now"
+            } else {
+                "Currently closed"
+            },
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold
+        )
+
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
-            text = gym.features.joinToString("\n"),
+            text = "Day Pass",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        Text(
+            text = "$${gym.dayPassPrice}",
+            style = MaterialTheme.typography.bodyLarge
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Text(
+            text = "Workout Types",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = gym.workoutTypes.joinToString("\n") { workoutType ->
+                "• $workoutType"
+            },
+            style = MaterialTheme.typography.bodyLarge
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Text(
+            text = "Amenities",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = gym.amenities.joinToString("\n") { amenity ->
+                "• $amenity"
+            },
             style = MaterialTheme.typography.bodyLarge
         )
 
@@ -475,7 +744,9 @@ fun GymDetailsScreen(
             Text(
                 text = if (isSaved) {
                     "Saved"
-                } else { "Save Gym" }
+                } else {
+                    "Save Gym"
+                }
             )
         }
     }
@@ -514,6 +785,13 @@ fun SavedGymsScreen(
                 text = "You haven't saved any gyms yet.",
                 style = MaterialTheme.typography.bodyLarge
             )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "Save a gym from your results and it will appear here.",
+                style = MaterialTheme.typography.bodyMedium
+            )
         } else {
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -528,11 +806,22 @@ fun SavedGymsScreen(
                         Column(
                             modifier = Modifier.padding(20.dp)
                         ) {
-                            Text(
-                                text = gym.name,
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold
-                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = gym.name,
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.weight(1f)
+                                )
+
+                                Text(
+                                    text = "★ ${gym.rating}",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
 
                             Spacer(modifier = Modifier.height(6.dp))
 
@@ -541,10 +830,17 @@ fun SavedGymsScreen(
                                 style = MaterialTheme.typography.bodyMedium
                             )
 
+                            Spacer(modifier = Modifier.height(6.dp))
+
+                            Text(
+                                text = "${gym.distanceMiles} miles away",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+
                             Spacer(modifier = Modifier.height(12.dp))
 
                             Text(
-                                text = gym.features.joinToString(" • "),
+                                text = gym.workoutTypes.joinToString(" • "),
                                 style = MaterialTheme.typography.bodySmall
                             )
                         }
