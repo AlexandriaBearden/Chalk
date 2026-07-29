@@ -575,41 +575,40 @@ fun ChalkHomeScreen(
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
                 .padding(
-                    start = 20.dp,
-                    end = 20.dp,
+                    start = 22.dp,
+                    end = 22.dp,
                     top = 18.dp,
-                    bottom = 20.dp
+                    bottom = 28.dp
                 )
         ) {
             HomeHeader(
                 onProfileClick = onProfileClick
             )
 
-            Spacer(modifier = Modifier.height(26.dp))
+            Spacer(modifier = Modifier.height(34.dp))
 
             Text(
                 text = "Find the right gym,\nwherever you travel.",
                 style = MaterialTheme.typography.displayMedium,
-                fontWeight = FontWeight.Medium,
-                lineHeight = 39.sp
+                color = MaterialTheme.colorScheme.onBackground
             )
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = "Tell us where you're going and\nwhat matters for your workout.",
-                style = MaterialTheme.typography.bodyMedium,
+                text = "Search by destination, then tell Chalk what matters for this workout.",
+                style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                lineHeight = 20.sp
+                modifier = Modifier.fillMaxWidth(0.92f)
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
             HomeSectionLabel(
                 text = "DESTINATION"
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             OutlinedTextField(
                 value = destination,
@@ -617,13 +616,16 @@ fun ChalkHomeScreen(
                     destination = newDestination
                 },
                 placeholder = {
-                    Text("Austin, TX")
+                    Text(
+                        text = "Austin, TX",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Outlined.LocationOn,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 },
                 trailingIcon = {
@@ -642,32 +644,32 @@ fun ChalkHomeScreen(
                     }
                 },
                 singleLine = true,
-                shape = RoundedCornerShape(12.dp),
+                shape = MaterialTheme.shapes.medium,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(54.dp)
+                    .height(58.dp)
             )
 
-            Spacer(modifier = Modifier.height(22.dp))
+            Spacer(modifier = Modifier.height(30.dp))
 
             HomeSectionLabel(
                 text = "WORKOUT PREFERENCES"
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(7.dp))
 
             Text(
-                text = "Select everything you want included.",
+                text = "Choose everything you want your recommendation to include.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            workoutOptions.chunked(2).forEach { rowOptions ->
+            workoutOptions.chunked(2).forEachIndexed { index, rowOptions ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(9.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     rowOptions.forEach { option ->
                         PreferenceTile(
@@ -686,10 +688,23 @@ fun ChalkHomeScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(9.dp))
+                if (index != workoutOptions.chunked(2).lastIndex) {
+                    Spacer(modifier = Modifier.height(10.dp))
+                }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            AnimatedVisibility(
+                visible = selectedOptions.isNotEmpty()
+            ) {
+                Text(
+                    text = "${selectedOptions.size} selected",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(top = 14.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(26.dp))
 
             Button(
                 onClick = {
@@ -699,15 +714,43 @@ fun ChalkHomeScreen(
                     )
                 },
                 enabled = canSearch,
-                shape = RoundedCornerShape(10.dp),
+                shape = MaterialTheme.shapes.medium,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp)
+                    .height(54.dp)
             ) {
+                Icon(
+                    imageVector = Icons.Outlined.Search,
+                    contentDescription = null,
+                    modifier = Modifier.size(19.dp)
+                )
+
+                Spacer(modifier = Modifier.width(9.dp))
+
                 Text(
-                    text = "Find Gyms",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium
+                    text = "Find My Gym",
+                    style = MaterialTheme.typography.labelLarge
+                )
+            }
+
+            if (!canSearch) {
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Text(
+                    text = when {
+                        destination.isBlank() && selectedOptions.isEmpty() ->
+                            "Add a destination and at least one preference."
+
+                        destination.isBlank() ->
+                            "Add your destination to continue."
+
+                        else ->
+                            "Choose at least one workout preference."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }
@@ -730,30 +773,28 @@ fun PreferenceTile(
 ) {
     Surface(
         onClick = onClick,
-        modifier = modifier.height(46.dp),
-        shape = RoundedCornerShape(10.dp),
+        modifier = modifier
+            .height(52.dp)
+            .animateContentSize(),
+        shape = MaterialTheme.shapes.small,
         color = if (isSelected) {
-            MaterialTheme.colorScheme.primaryContainer.copy(
-                alpha = 0.38f
-            )
+            MaterialTheme.colorScheme.primaryContainer
         } else {
-            MaterialTheme.colorScheme.background
+            MaterialTheme.colorScheme.surface
         },
         border = BorderStroke(
             width = 1.dp,
             color = if (isSelected) {
-                MaterialTheme.colorScheme.primary.copy(
-                    alpha = 0.65f
-                )
+                MaterialTheme.colorScheme.primary
             } else {
-                MaterialTheme.colorScheme.outlineVariant
+                MaterialTheme.colorScheme.outline
             }
         )
     ) {
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 11.dp),
+                .padding(horizontal = 13.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
@@ -768,15 +809,19 @@ fun PreferenceTile(
                 } else {
                     MaterialTheme.colorScheme.onSurfaceVariant
                 },
-                modifier = Modifier.size(17.dp)
+                modifier = Modifier.size(18.dp)
             )
 
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(9.dp))
 
             Text(
                 text = text,
                 style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Normal,
+                fontWeight = if (isSelected) {
+                    FontWeight.SemiBold
+                } else {
+                    FontWeight.Normal
+                },
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1
             )
@@ -796,22 +841,32 @@ fun HomeHeader(
             text = "CHALK",
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.Bold,
-            letterSpacing = 2.4.sp,
+            letterSpacing = 3.sp,
             color = MaterialTheme.colorScheme.primary
         )
 
         Spacer(modifier = Modifier.weight(1f))
 
-        IconButton(
+        Surface(
             onClick = onProfileClick,
-            modifier = Modifier.size(34.dp)
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surface,
+            border = BorderStroke(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outline
+            ),
+            modifier = Modifier.size(40.dp)
         ) {
-            Icon(
-                imageVector = Icons.Outlined.Person,
-                contentDescription = "Profile",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(22.dp)
-            )
+            Box(
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Person,
+                    contentDescription = "Profile",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
         }
     }
 }
@@ -824,7 +879,7 @@ fun HomeSectionLabel(
         text = text,
         style = MaterialTheme.typography.labelSmall,
         fontWeight = FontWeight.Bold,
-        letterSpacing = 0.8.sp,
+        letterSpacing = 1.1.sp,
         color = MaterialTheme.colorScheme.primary
     )
 }
@@ -1165,6 +1220,38 @@ fun GymResultCard(
         matchedFeatures = matchedFeatures
     )
 
+    if (isFeatured) {
+        FeaturedGymResultCard(
+            gym = gym,
+            matchedFeatures = matchedFeatures,
+            matchPercentage = matchPercentage,
+            recommendationReasons = recommendationReasons,
+            isSaved = isSaved,
+            onSaveClick = onSaveClick,
+            onGymClick = onGymClick
+        )
+    } else {
+        CompactGymResultCard(
+            gym = gym,
+            matchedFeatures = matchedFeatures,
+            matchPercentage = matchPercentage,
+            isSaved = isSaved,
+            onSaveClick = onSaveClick,
+            onGymClick = onGymClick
+        )
+    }
+}
+
+@Composable
+fun FeaturedGymResultCard(
+    gym: Gym,
+    matchedFeatures: List<String>,
+    matchPercentage: Int,
+    recommendationReasons: List<String>,
+    isSaved: Boolean,
+    onSaveClick: () -> Unit,
+    onGymClick: () -> Unit
+) {
     var reasonsExpanded by remember {
         mutableStateOf(false)
     }
@@ -1174,250 +1261,532 @@ fun GymResultCard(
         modifier = Modifier
             .fillMaxWidth()
             .animateContentSize(),
-        shape = RoundedCornerShape(
-            if (isFeatured) 22.dp else 18.dp
-        ),
+        shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isFeatured) 3.dp else 1.dp
+            defaultElevation = 2.dp
+        ),
+        border = BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant
         )
     ) {
         Column {
-            if (isFeatured) {
+            FeaturedGymVisual(
+                gym = gym,
+                matchPercentage = matchPercentage,
+                isSaved = isSaved,
+                onSaveClick = onSaveClick
+            )
+
+            Column(
+                modifier = Modifier.padding(
+                    start = 20.dp,
+                    end = 20.dp,
+                    top = 20.dp,
+                    bottom = 18.dp
+                )
+            ) {
+                Text(
+                    text = gym.name,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Text(
+                    text = gym.location,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                Spacer(modifier = Modifier.height(18.dp))
+
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            MaterialTheme.colorScheme.primaryContainer.copy(
-                                alpha = 0.42f
-                            )
-                        )
-                        .padding(
-                            horizontal = 16.dp,
-                            vertical = 11.dp
-                        ),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Text(
-                        text = "RECOMMENDED",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        letterSpacing = 1.sp,
-                        color = MaterialTheme.colorScheme.primary
+                    GymStatItem(
+                        eyebrow = "RATING",
+                        value = "★ ${gym.rating}",
+                        modifier = Modifier.weight(1f)
                     )
 
+                    GymStatItem(
+                        eyebrow = "DISTANCE",
+                        value = "${gym.distanceMiles} mi",
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    GymStatItem(
+                        eyebrow = "DAY PASS",
+                        value = "$${gym.dayPassPrice}",
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant
+                )
+
+                Spacer(modifier = Modifier.height(18.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        shape = CircleShape,
+                        color = if (gym.isOpen) {
+                            MaterialTheme.colorScheme.primaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.surfaceVariant
+                        }
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .padding(2.dp)
+                                .background(
+                                    color = if (gym.isOpen) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    },
+                                    shape = CircleShape
+                                )
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
                     Text(
-                        text = "$matchPercentage% MATCH",
+                        text = if (gym.isOpen) {
+                            "Open now"
+                        } else {
+                            "Currently closed"
+                        },
                         style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (gym.isOpen) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        }
+                    )
+                }
+
+                if (matchedFeatures.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(18.dp))
+
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(matchedFeatures.take(4)) { feature ->
+                            FeaturePill(
+                                text = feature,
+                                isHighlighted = true
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(18.dp))
+
+                Surface(
+                    shape = MaterialTheme.shapes.medium,
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(
+                        alpha = 0.45f
+                    ),
+                    border = BorderStroke(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.primary.copy(
+                            alpha = 0.16f
+                        )
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                    ) {
+                        Text(
+                            text = recommendationReasons
+                                .firstOrNull()
+                                ?: "A strong match for your selected preferences.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            lineHeight = 21.sp
+                        )
+
+                        if (recommendationReasons.size > 1) {
+                            Spacer(modifier = Modifier.height(6.dp))
+
+                            TextButton(
+                                onClick = {
+                                    reasonsExpanded = !reasonsExpanded
+                                },
+                                contentPadding = PaddingValues(0.dp)
+                            ) {
+                                Text(
+                                    text = if (reasonsExpanded) {
+                                        "Show less"
+                                    } else {
+                                        "Why Chalk picked this"
+                                    },
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+
+                                Spacer(modifier = Modifier.width(6.dp))
+
+                                Text(
+                                    text = if (reasonsExpanded) "−" else "+",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+
+                        AnimatedVisibility(
+                            visible = reasonsExpanded,
+                            enter = fadeIn(
+                                animationSpec = tween(220)
+                            ),
+                            exit = fadeOut(
+                                animationSpec = tween(160)
+                            )
+                        ) {
+                            Column {
+                                recommendationReasons
+                                    .drop(1)
+                                    .forEach { reason ->
+                                        Spacer(modifier = Modifier.height(10.dp))
+
+                                        Row(
+                                            verticalAlignment = Alignment.Top
+                                        ) {
+                                            Text(
+                                                text = "•",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+
+                                            Spacer(modifier = Modifier.width(8.dp))
+
+                                            Text(
+                                                text = reason,
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = MaterialTheme.colorScheme.onSurface,
+                                                lineHeight = 21.sp,
+                                                modifier = Modifier.weight(1f)
+                                            )
+                                        }
+                                    }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(18.dp))
+
+                Text(
+                    text = "View gym details",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.align(Alignment.End)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun FeaturedGymVisual(
+    gym: Gym,
+    matchPercentage: Int,
+    isSaved: Boolean,
+    onSaveClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(174.dp)
+            .background(
+                brush = Brush.linearGradient(
+                    colors = listOf(
+                        MaterialTheme.colorScheme.primaryContainer,
+                        MaterialTheme.colorScheme.surfaceVariant,
+                        MaterialTheme.colorScheme.primary.copy(
+                            alpha = 0.32f
+                        )
+                    )
+                )
+            )
+    ) {
+        Box(
+            modifier = Modifier
+                .size(170.dp)
+                .offset(
+                    x = 210.dp,
+                    y = (-45).dp
+                )
+                .clip(CircleShape)
+                .background(
+                    MaterialTheme.colorScheme.surface.copy(
+                        alpha = 0.24f
+                    )
+                )
+        )
+
+        Box(
+            modifier = Modifier
+                .size(120.dp)
+                .offset(
+                    x = (-35).dp,
+                    y = 95.dp
+                )
+                .clip(CircleShape)
+                .background(
+                    MaterialTheme.colorScheme.primary.copy(
+                        alpha = 0.12f
+                    )
+                )
+        )
+
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(20.dp)
+        ) {
+            Text(
+                text = "CHALK RECOMMENDS",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.2.sp,
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = gym.workoutTypes
+                    .take(2)
+                    .joinToString(" • "),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+        }
+
+        Surface(
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(16.dp),
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surface.copy(
+                alpha = 0.92f
+            )
+        ) {
+            Text(
+                text = "$matchPercentage% match",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(
+                    horizontal = 13.dp,
+                    vertical = 8.dp
+                )
+            )
+        }
+
+        Surface(
+            onClick = onSaveClick,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(14.dp)
+                .size(42.dp),
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surface.copy(
+                alpha = 0.92f
+            )
+        ) {
+            Box(
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = if (isSaved) "♥" else "♡",
+                    fontSize = 23.sp,
+                    color = if (isSaved) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun GymStatItem(
+    eyebrow: String,
+    value: String,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+    ) {
+        Text(
+            text = eyebrow,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 0.7.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Spacer(modifier = Modifier.height(5.dp))
+
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+    }
+}
+
+@Composable
+fun CompactGymResultCard(
+    gym: Gym,
+    matchedFeatures: List<String>,
+    matchPercentage: Int,
+    isSaved: Boolean,
+    onSaveClick: () -> Unit,
+    onGymClick: () -> Unit
+) {
+    Card(
+        onClick = onGymClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 0.dp
+        ),
+        border = BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(17.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = gym.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+
+                    Spacer(modifier = Modifier.height(5.dp))
+
+                    Text(
+                        text = "${gym.location} • ${gym.distanceMiles} mi",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                IconButton(
+                    onClick = onSaveClick,
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Text(
+                        text = if (isSaved) "♥" else "♡",
+                        fontSize = 22.sp,
+                        color = if (isSaved) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        }
                     )
                 }
             }
 
-            Column(
-                modifier = Modifier.padding(
-                    horizontal = if (isFeatured) 18.dp else 16.dp,
-                    vertical = if (isFeatured) 18.dp else 15.dp
-                )
+            Spacer(modifier = Modifier.height(14.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.Bottom
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.Top
+                Column(
+                    modifier = Modifier.weight(1f)
                 ) {
-                    Column(
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text(
-                            text = gym.name,
-                            style = if (isFeatured) {
-                                MaterialTheme.typography.titleLarge
-                            } else {
-                                MaterialTheme.typography.titleMedium
-                            },
-                            fontWeight = FontWeight.SemiBold
-                        )
-
-                        Spacer(modifier = Modifier.height(5.dp))
-
-                        Text(
-                            text = "${gym.location}  •  ${gym.distanceMiles} mi",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Text(
-                            text = "★ ${gym.rating}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-
-                        Spacer(modifier = Modifier.height(5.dp))
-
-                        Text(
-                            text = if (gym.isOpen) {
-                                "Open now"
-                            } else {
-                                "Currently closed"
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.Medium,
-                            color = if (gym.isOpen) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            }
-                        )
-                    }
-
-                    Column(
-                        horizontalAlignment = Alignment.End
-                    ) {
-                        IconButton(
-                            onClick = onSaveClick,
-                            modifier = Modifier.size(36.dp)
-                        ) {
-                            Text(
-                                text = if (isSaved) "♥" else "♡",
-                                fontSize = 23.sp,
-                                color = if (isSaved) {
-                                    MaterialTheme.colorScheme.primary
-                                } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                }
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        Text(
-                            text = "$${gym.dayPassPrice}",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-
-                        Text(
-                            text = "Day pass",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
-                if (isFeatured) {
-                    Spacer(modifier = Modifier.height(18.dp))
-
-                    HorizontalDivider(
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(
-                            alpha = 0.65f
-                        )
-                    )
-
-                    TextButton(
-                        onClick = {
-                            reasonsExpanded = !reasonsExpanded
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        contentPadding = PaddingValues(
-                            horizontal = 0.dp,
-                            vertical = 12.dp
-                        )
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Why we picked this",
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-
-                            Text(
-                                text = if (reasonsExpanded) "−" else "+",
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-
-                    AnimatedVisibility(
-                        visible = reasonsExpanded,
-                        enter = fadeIn(
-                            animationSpec = tween(220)
-                        ),
-                        exit = fadeOut(
-                            animationSpec = tween(160)
-                        )
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(
-                                    MaterialTheme.colorScheme.primaryContainer.copy(
-                                        alpha = 0.24f
-                                    ),
-                                    shape = RoundedCornerShape(14.dp)
-                                )
-                                .padding(15.dp)
-                        ) {
-                            recommendationReasons.forEachIndexed { index, reason ->
-                                Row(
-                                    verticalAlignment = Alignment.Top
-                                ) {
-                                    Text(
-                                        text = "•",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-
-                                    Spacer(modifier = Modifier.width(8.dp))
-
-                                    Text(
-                                        text = reason,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                }
-
-                                if (index != recommendationReasons.lastIndex) {
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                }
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-                } else {
-                    Spacer(modifier = Modifier.height(14.dp))
-
                     Text(
-                        text = "$matchPercentage% match",
+                        text = "★ ${gym.rating}  •  $matchPercentage% match",
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.primary
                     )
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(5.dp))
+
+                    Text(
+                        text = if (gym.isOpen) {
+                            "Open now"
+                        } else {
+                            "Currently closed"
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
+
+                Column(
+                    horizontalAlignment = Alignment.End
+                ) {
+                    Text(
+                        text = "$${gym.dayPassPrice}",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Text(
+                        text = "day pass",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            if (matchedFeatures.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(15.dp))
 
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(7.dp)
                 ) {
-                    gym.workoutTypes
-                        .take(if (isFeatured) 3 else 2)
-                        .forEach { workoutType ->
-                            FeaturePill(
-                                text = workoutType,
-                                isHighlighted = workoutType in matchedFeatures
+                    matchedFeatures
+                        .take(2)
+                        .forEach { feature ->
+                            CompactFeaturePill(
+                                text = feature
                             )
                         }
                 }
